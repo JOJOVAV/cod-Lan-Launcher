@@ -1,0 +1,246 @@
+@echo off
+@title PLUTONIUM LAN LAUNCHER
+mode 79,20
+
+set launching=.\bin\plutonium-bootstrapper-win32.exe
+::set launcher=%LOCALAPPDAT%
+set latest=cd /D %LOCALAPPDATA%\Plutonium
+
+::config file with username and gamepath
+set "inifile=Resources\config.ini"
+set "sectionS=settings"
+set "ininame=username"
+set "sectionF=folder"
+set "inimw3=folder_mw3"
+set "iniwaw=folder_waw"
+set "inibo1=folder_bo1"
+set "inibo2=folder_bo2"
+
+
+::game paths
+::set mw3="D:\modded cod\plutonium\mw3 dodi\pluto_iw5_full_game"
+::set mw3=""
+::set waw="D:\modded cod\plutonium\T4 aka waw\pluto_t4_full_game"
+::set bo1="D:\modded cod\plutonium\T5 BO1\pluto_t5_full_game"
+::set bo2="D:\modded cod\plutonium\T6 BO2\pluto_t6_full_game"
+setlocal enabledelayedexpansion
+
+call :checkResources
+call :loadConfig
+call :folder_mw3
+call :folder_waw
+call :folder_bo1
+call :folder_bo1
+
+::config
+::@REM if exist "Resources\changeme.txt" (
+::@REM     set /p name=< Resources\changeme.txt && goto home
+::@REM ) else goto case_1
+
+
+:home
+cls
+echo ###################### PLUTONIUM LAN LAUNCHER #################################
+echo.
+echo   Player Name: %name%
+echo.
+call :cmdMenuSel "  Set Player Name" "  Edit Gamepath" "  Choose Multiplayer" "  Choose Zombies" "  Exit"
+if %ERRORLEVEL% == 1 call :editName
+if %ERRORLEVEL% == 2 call :editGamepath
+if %ERRORLEVEL% == 3 call :chooseMultiplayer
+if %ERRORLEVEL% == 4 call :chooseZombies
+if %ERRORLEVEL% == 5 exit
+
+exit /b
+
+
+:checkResources
+if not exist "Resources\cmdmenusel.exe" (
+mkdir Resources
+echo -------------------------------------------------------------------------------
+echo ###################### Downloading cmdmenusel...###############################
+echo -------------------------------------------------------------------------------
+::curl -L  "https://github.com/JOJOVAV/cod-Lan-Launcher/releases/download/first/cmdmenusel.exe" --ssl-no-revoke --output cmdmenusel.exe
+curl -L "https://github.com/JOJOVAV/cod-Lan-Launcher/raw/main/cmdmenusel.exe" --ssl-no-revoke --output cmdmenusel.exe
+
+move cmdmenusel.exe Resources
+)
+exit /b
+
+:checkname
+for /f "tokens=2 delims==" %%a in ('find "%ininame%=" %inifile%') do (
+    set "%~2=%%a"
+    set "name=%%a"
+   )
+   pause
+exit /b
+
+
+:loadConfig
+if not exist "%inifile%" (
+    (
+        echo ;the little settings configuration
+        echo [settings]
+        echo ;format username=yourusername
+        echo username=
+        echo [folder]
+        echo ;format same as the username
+        echo ;folder=your\path\to\the\game
+        echo ;example folder_bo1="D:\modded cod\plutonium\T5 BO1\pluto_t5_full_game"
+        echo folder_mw3=""
+        echo folder_waw=""
+        echo folder_bo1=""
+        echo folder_bo2=""
+    ) > "%inifile%" && call :editName
+) else exit /b
+
+exit /b
+
+:cmdMenuSel
+Resources\cmdMenuSel f870 %*
+exit /b
+
+:folder_mw3
+for /f "tokens=2 delims==" %%b in ('find "%inimw3%=" %inifile%') do (
+    set "%inimw3%=%%b"
+    set "mw3=%%b"
+   )
+exit /b
+
+:folder_waw
+for /f "tokens=2 delims==" %%c in ('find "%iniwaw%=" %inifile%') do (
+    set "%~2=%%c"
+    set "waw=%%c"
+   )
+exit /b
+
+:folder_bo1
+for /f "tokens=2 delims==" %%d in ('find "%inibo1%=" %inifile%') do (
+    set "%~2=%%d"
+    set "bo1=%%d"
+   )
+exit /b
+
+:folder_bo2
+for /f "tokens=2 delims==" %%e in ('find "%inibo2%=" %inifile%') do (
+    set "%~2=%%e"
+    set "bo2=%%e"
+   )
+exit /b
+
+
+
+:editName
+cls
+echo ############################ EDITING USERNAME #################################
+echo.
+echo   at the moment the name doesn't save so you have to manually edit the config 
+echo   file if you would like to save the name after closing
+::del changeme.txt
+::setx /f path_to_ini_file.ini section_name key_name new_value
+::set /p name="Enter Player name: "
+set /p name="Enter Player name: "
+setx /f %inifile% %sectionS% %ininame% %name%
+::echo %name% > Resources\config.ini
+goto home
+
+
+::change gamepath
+:editGamepath
+call :folder_mw3
+call :folder_waw
+call :folder_bo1
+call :folder_bo2
+cls
+echo ############################ EDITING GAMEPATH #################################
+echo It's in the work. Edit your path in the config.ini file
+echo.
+echo   Modern Warfare 3: 
+echo   %mw3%
+echo.
+echo   World at War: 
+echo   %waw%
+echo.
+echo   Black Ops: 
+echo   %bo1%
+echo.
+echo   Black Ops 2: 
+echo   %bo2%
+echo.
+echo.
+pause   press any key to go back
+goto home
+
+call :cmdMenuSel "  Edit Path MW3" "  Edit Path WAW" "  Edit Path BO1" "  Edit Path BO2"
+
+if %ERRORLEVEL% == 1 call :edit_mw3
+if %ERRORLEVEL% == 2 call :edit_waw
+if %ERRORLEVEL% == 3 call :edit_bo1
+if %ERRORLEVEL% == 4 call :edit_bo2
+
+::launch multiplayer
+:chooseMultiplayer
+cls
+echo ##################### PLUTONIUM MULTIPLAYER LAUNCHER ##########################
+echo.
+call :cmdMenuSel "  Launch Modern Warfare 3 (IW5)" "  Launch Wordl at War (T4)" "  Launch Black Ops (T5)" "  Launch BLACK OPS 2 (T6)" "  Back"
+
+if %ERRORLEVEL% == 1 call :multiplayer_1
+if %ERRORLEVEL% == 2 call :multiplayer_2
+if %ERRORLEVEL% == 3 call :multiplayer_3
+if %ERRORLEVEL% == 4 call :multiplayer_4
+if %ERRORLEVEL% == 5 goto home
+
+
+
+::launch zombies
+:chooseZombies
+cls
+echo ################### PLUTONIUM ZOMBIE LAUNCHER #################################
+echo.
+call :cmdMenuSel "  Launch Wordl at War (T4)" "  Launch Black Ops (T5)" "  Launch BLACK OPS 2 (T6)" "  Back"
+
+if %ERRORLEVEL% == 1 call :zombies_1
+if %ERRORLEVEL% == 2 call :zombies_2
+if %ERRORLEVEL% == 3 call :zombies_3
+if %ERRORLEVEL% == 4 goto home
+
+
+::function to launch the game
+:LaunchGame
+
+%latest%
+start /wait /abovenormal %launching% %1 %2 -lan -name "%name%"
+exit /b
+
+:multiplayer_1 rem iw5mp = modernwarfare 3 multiplayer
+call :LaunchGame iw5mp %mw3%
+exit
+
+:multiplayer_2 rem t4mp = world at war multiplayer
+%latest%
+start /wait /abovenormal %launching% t4mp %waw% -lan -name "%name%"
+exit /b
+
+:multiplayer_3 rem t5mp = black ops 1 multiplayer
+::cd /D %LOCALAPPDATA%\Plutonium
+call :LaunchGame t5mp %bo1%
+exit /b
+
+:multiplayer_4 rem t6mp = black ops 2 multiplayer
+call :LaunchGame t6mp %bo2%
+exit /b
+
+:zombies_1
+call :LaunchGame t4sp %waw%
+exit /b
+
+:zombies_2 rem t4sp = world at war singleplayer/zombies
+call :LaunchGame t5sp %bo1%
+exit /b
+
+:zombies_3 rem t5sp = black ops singleplayer/zombies
+call :LaunchGame t6zm %bo2%
+exit /b
+
+
