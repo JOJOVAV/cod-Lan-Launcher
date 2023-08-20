@@ -1,13 +1,14 @@
 @echo off
 @title PLUTONIUM LAN LAUNCHER
-mode 79,20
+
 
 set launching=.\bin\plutonium-bootstrapper-win32.exe
-::set launcher=%LOCALAPPDAT%
+set launcher=.\bin\plutonium-launcher-win32.exe
 set latest=cd /D %LOCALAPPDATA%\Plutonium
 
 ::config file with username and gamepath
 set "inifile=Resources\config.ini"
+set "powershellscript=Resources\script.ps1"
 set "sectionS=settings"
 set "ininame=username"
 set "sectionF=folder"
@@ -15,6 +16,7 @@ set "inimw3=folder_mw3"
 set "iniwaw=folder_waw"
 set "inibo1=folder_bo1"
 set "inibo2=folder_bo2"
+set "psCommand="(new-object -COM 'Shell.Application')^.BrowseForFolder(0,'Please choose your game folder.',0,0).self.path""
 
 
 ::game paths
@@ -26,11 +28,9 @@ set "inibo2=folder_bo2"
 setlocal enabledelayedexpansion
 
 call :checkResources
+call :makepowershellscript
 call :loadConfig
-call :folder_mw3
-call :folder_waw
-call :folder_bo1
-call :folder_bo1
+
 
 ::config
 ::@REM if exist "Resources\changeme.txt" (
@@ -39,22 +39,137 @@ call :folder_bo1
 
 
 :home
+call :folder_mw3
+call :folder_waw
+call :folder_bo1
+call :folder_bo2
+MODE 79,20
+@Title Home Plutonium Launcher
 cls
-echo ###################### PLUTONIUM LAN LAUNCHER #################################
+echo ###############################################################################
+echo                         PLUTONIUM LAUNCHER
+echo ###############################################################################
 echo.
 echo   Player Name: %name%
 echo.
-call :cmdMenuSel "  Set Player Name" "  Edit Gamepath" "  Choose Multiplayer" "  Choose Zombies" "  Exit"
-if %ERRORLEVEL% == 1 call :editName
-if %ERRORLEVEL% == 2 call :editGamepath
-if %ERRORLEVEL% == 3 call :chooseMultiplayer
-if %ERRORLEVEL% == 4 call :chooseZombies
-if %ERRORLEVEL% == 5 exit
+call :cmdMenuSel "  Launch Online" "  Choose Multiplayer (LAN)" "  Choose Zombies LAN" "" "  Settings" "  Exit"
+if %ERRORLEVEL% == 1 call :pluto
+if %ERRORLEVEL% == 2 call :chooseMultiplayer
+if %ERRORLEVEL% == 3 call :chooseZombies
+if %ERRORLEVEL% == 4 call generate_config.bat
+if %ERRORLEVEL% == 5 call :settings
+if %ERRORLEVEL% == 6 exit
 
 exit /b
 
 
+::launch multiplayer
+:chooseMultiplayer
+MODE 79,20
+@title Plutonium Multiplayer Launcher
+cls
+echo ###############################################################################
+echo                       PLUTONIUM MULTIPLAYER LAUNCHER
+echo ###############################################################################
+echo.
+call :cmdMenuSel "  Launch Modern Warfare 3 (IW5)" "  Launch Wordl at War (T4)" "  Launch Black Ops (T5)" "  Launch BLACK OPS 2 (T6)" "  Back"
+
+if %ERRORLEVEL% == 1 call :multiplayer_1
+if %ERRORLEVEL% == 2 call :multiplayer_2
+if %ERRORLEVEL% == 3 call :multiplayer_3
+if %ERRORLEVEL% == 4 call :multiplayer_4
+if %ERRORLEVEL% == 5 goto home
+
+exit /b
+
+
+::launch zombies
+:chooseZombies
+MODE 79,20
+@title Plutonium Zombie Launcher
+cls
+echo ###############################################################################
+echo                      PLUTONIUM ZOMBIE LAUNCHER
+echo ###############################################################################
+echo.
+call :cmdMenuSel "  Launch Wordl at War (T4)" "  Launch Black Ops (T5)" "  Launch BLACK OPS 2 (T6)" "  Back"
+
+if %ERRORLEVEL% == 1 call :zombies_1
+if %ERRORLEVEL% == 2 call :zombies_2
+if %ERRORLEVEL% == 3 call :zombies_3
+if %ERRORLEVEL% == 4 goto home
+
+:settings
+mode 79,10
+@title Plutonium LAN Settings
+echo ###############################################################################
+echo                         PLUTONIUM LAN SETTINGS
+echo ###############################################################################
+echo.
+call :cmdMenuSel "  Edit Name" "  Edit Gamepath" "  Back"
+if %ERRORLEVEL% == 1 call :editName
+if %ERRORLEVEL% == 2 call :editGamepath
+if %ERRORLEVEL% == 3 call :home
+exit /b
+
+:editName
+mode 79,10
+@title Edit username
+cls
+echo ###############################################################################
+echo                              EDITING USERNAME
+echo ###############################################################################
+echo.
+echo   at the moment the name doesn't save so you have to manually edit the config 
+echo   file if you would like to save the name after closing
+::del changeme.txt
+::setx /f path_to_ini_file.ini section_name key_name new_value
+set /p name="Enter Player name: "
+
+
+powershell -ExecutionPolicy Bypass -File "%powershellscript%" -iniFile "%inifile%" -section "%sectionS%" -key "%ininame%" -newValue "%name%"
+
+exit /b
+::change gamepath
+:editGamepath
+::call :folder_mw3
+::call :folder_waw
+::call :folder_bo1
+::call :folder_bo2
+mode 79,30
+@title Edit Gamepath
+cls
+echo ###############################################################################
+echo                              EDITING GAMEPATH
+echo ###############################################################################
+echo "If it doesn't work -> Edit your path in the %inifile% file"
+echo.
+echo   Modern Warfare 3: 
+echo   %mw3%
+echo.
+echo   World at War: 
+echo   %waw%
+echo.
+echo   Black Ops: 
+echo   %bo1%
+echo.
+echo   Black Ops 2: 
+echo   %bo2%
+echo.
+echo.
+call :cmdMenuSel "  Edit Path MW3" "  Edit Path WAW" "  Edit Path BO1" "  Edit Path BO2" "  back"
+
+if %ERRORLEVEL% == 1 call :edit_mw3
+if %ERRORLEVEL% == 2 call :edit_waw
+if %ERRORLEVEL% == 3 call :edit_bo1
+if %ERRORLEVEL% == 4 call :edit_bo2
+if %ERRORLEVEL% == 5 call :home
+exit /b
+
+
 :checkResources
+@Title Downloading cmdMenuSel
+MODE 79,10
 if not exist "Resources\cmdmenusel.exe" (
 mkdir Resources
 echo -------------------------------------------------------------------------------
@@ -67,15 +182,55 @@ move cmdmenusel.exe Resources
 )
 exit /b
 
-:checkname
-for /f "tokens=2 delims==" %%a in ('find "%ininame%=" %inifile%') do (
-    set "%~2=%%a"
-    set "name=%%a"
-   )
-   pause
-exit /b
+:makepowershellscript
+
+if exist "%powershellscript%" (
+    goto loadConfig
+)
+else (
+        
+    echo param ( > "%powershellscript%"
+    echo     [string]$iniFile, >> "%powershellscript%"
+    echo     [string]$section, >> "%powershellscript%"
+    echo     [string]$key, >> "%powershellscript%"
+    echo     [string]$newValue >> "%powershellscript%"
+    echo ^) >> "%powershellscript%"
+    
+    echo $content = Get-Content -Path $iniFile >> "%powershellscript%"
+    echo $newContent = @() >> "%powershellscript%"
+    echo if ($section -eq "settings") { >> "%powershellscript%"
+    echo     foreach ($line in $content) { >> "%powershellscript%"
+    echo         if ($line -match "^\s*$key\s*=") { >> "%powershellscript%"
+    echo             $newLine = "$key=$newValue" >> "%powershellscript%"
+    echo             $newContent += $newLine >> "%powershellscript%"
+    echo         } else { >> "%powershellscript%"
+    
+    echo             $newContent += $line >> "%powershellscript%"
+    echo         } >> "%powershellscript%"
+    echo     } >> "%powershellscript%"
+    echo } else { >> "%powershellscript%"
+    
+    echo     foreach ($line in $content) { >> "%powershellscript%"
+    echo         if ($line -match "^\s*$key\s*=") { >> "%powershellscript%"
+    echo             $newLine = "$key=""$newValue""" >> "%powershellscript%"
+    echo             $newContent += $newLine >> "%powershellscript%"
+    echo         } else { >> "%powershellscript%"
+    echo             $newContent += $line >> "%powershellscript%"
+    echo         } >> "%powershellscript%"
+    echo     } >> "%powershellscript%"
+    echo } >> "%powershellscript%"
+    
+    echo $newContent ^| Set-Content -Path $iniFile >> "%powershellscript%"
+
+    exit /b
 
 
+)
+
+
+
+
+::loading the config or if exist goes to checking name if empty
 :loadConfig
 if not exist "%inifile%" (
     (
@@ -92,118 +247,103 @@ if not exist "%inifile%" (
         echo folder_bo1=""
         echo folder_bo2=""
     ) > "%inifile%" && call :editName
-) else exit /b
+) else call :checkname
 
 exit /b
 
+
+:checkname
+ for /f "usebackq tokens=1,2" %%A in ("%inifile%") do (
+    set "line=%%A"
+    
+    if "!line:[%sectionS%]!" neq "!line!" (
+        for /f "tokens=1,2 delims==" %%B in ("!line!") do (
+            if "%%B"=="%ininame%" (
+                if "%%C"=="" (
+                                        
+                    goto editname
+                ) else (
+                    set "name=%%C"
+                    
+                    exit /b
+
+                )
+            )
+        )
+    )
+)
+exit /b
+
+::edit folder
+:edit_mw3
+setlocal
+for /f "usebackq delims=" %%I in (`powershell %psCommand%`) do set "mw3=%%I"
+
+powershell -ExecutionPolicy Bypass -File "%powershellscript%" -iniFile "%inifile%" -section "%sectionF%" -key "%inimw3%" -newValue "%mw3%"
+endlocal
+goto editGamepath
+
+:edit_waw
+setlocal
+for /f "usebackq delims=" %%M in (`powershell %psCommand%`) do set "waw=%%M"
+
+powershell -ExecutionPolicy Bypass -File "%powershellscript%" -iniFile "%inifile%" -section "%sectionF%" -key "%iniwaw%" -newValue "%waw%"
+endlocal
+goto editGamepath
+
+:edit_bo1
+setlocal
+for /f "usebackq delims=" %%N in (`powershell %psCommand%`) do set "bo1=%%N"
+
+powershell -ExecutionPolicy Bypass -File "%powershellscript%" -iniFile "%inifile%" -section "%sectionF%" -key "%inibo1%" -newValue "%bo1%"
+endlocal
+goto editGamepath
+
+:edit_bo2
+setlocal
+for /f "usebackq delims=" %%O in (`powershell %psCommand%`) do set "bo2=%%O"
+
+powershell -ExecutionPolicy Bypass -File "%powershellscript%" -iniFile "%inifile%" -section "%sectionF%" -key "%inibo2%" -newValue "%bo2%"
+endlocal
+goto editGamepath
+
 :cmdMenuSel
-Resources\cmdMenuSel f870 %*
+Resources\cmdMenuSel 07f0 %*
 exit /b
 
 :folder_mw3
-for /f "tokens=2 delims==" %%b in ('find "%inimw3%=" %inifile%') do (
-    set "%inimw3%=%%b"
-    set "mw3=%%b"
-   )
+for /f "tokens=2 delims==" %%H in ('find "%inimw3%=" %inifile%') do (
+    set "%inimw3%=%%H"
+    set "mw3=%%H"
+)
 exit /b
 
 :folder_waw
-for /f "tokens=2 delims==" %%c in ('find "%iniwaw%=" %inifile%') do (
-    set "%~2=%%c"
-    set "waw=%%c"
+for /f "tokens=2 delims==" %%I in ('find "%iniwaw%=" %inifile%') do (
+    set "iniwaw=%%I"
+    set "waw=%%I"
    )
 exit /b
 
 :folder_bo1
-for /f "tokens=2 delims==" %%d in ('find "%inibo1%=" %inifile%') do (
-    set "%~2=%%d"
-    set "bo1=%%d"
+for /f "tokens=2 delims==" %%J in ('find "%inibo1%=" %inifile%') do (
+    set "inibo1=%%J"
+    set "bo1=%%J"
    )
-exit /b
+   exit /b
 
 :folder_bo2
-for /f "tokens=2 delims==" %%e in ('find "%inibo2%=" %inifile%') do (
-    set "%~2=%%e"
-    set "bo2=%%e"
+for /f "tokens=2 delims==" %%L in ('find "%inibo2%=" %inifile%') do (
+    set "inibo2=%%L"
+    set "bo2=%%L"
    )
 exit /b
 
+:pluto
+%latest%
+start /wait "" "%launcher%"
+exit /b
 
-
-:editName
-cls
-echo ############################ EDITING USERNAME #################################
-echo.
-echo   at the moment the name doesn't save so you have to manually edit the config 
-echo   file if you would like to save the name after closing
-::del changeme.txt
-::setx /f path_to_ini_file.ini section_name key_name new_value
-::set /p name="Enter Player name: "
-set /p name="Enter Player name: "
-setx /f %inifile% %sectionS% %ininame% %name%
-::echo %name% > Resources\config.ini
-goto home
-
-
-::change gamepath
-:editGamepath
-call :folder_mw3
-call :folder_waw
-call :folder_bo1
-call :folder_bo2
-cls
-echo ############################ EDITING GAMEPATH #################################
-echo It's in the work. Edit your path in the config.ini file
-echo.
-echo   Modern Warfare 3: 
-echo   %mw3%
-echo.
-echo   World at War: 
-echo   %waw%
-echo.
-echo   Black Ops: 
-echo   %bo1%
-echo.
-echo   Black Ops 2: 
-echo   %bo2%
-echo.
-echo.
-pause   press any key to go back
-goto home
-
-call :cmdMenuSel "  Edit Path MW3" "  Edit Path WAW" "  Edit Path BO1" "  Edit Path BO2"
-
-if %ERRORLEVEL% == 1 call :edit_mw3
-if %ERRORLEVEL% == 2 call :edit_waw
-if %ERRORLEVEL% == 3 call :edit_bo1
-if %ERRORLEVEL% == 4 call :edit_bo2
-
-::launch multiplayer
-:chooseMultiplayer
-cls
-echo ##################### PLUTONIUM MULTIPLAYER LAUNCHER ##########################
-echo.
-call :cmdMenuSel "  Launch Modern Warfare 3 (IW5)" "  Launch Wordl at War (T4)" "  Launch Black Ops (T5)" "  Launch BLACK OPS 2 (T6)" "  Back"
-
-if %ERRORLEVEL% == 1 call :multiplayer_1
-if %ERRORLEVEL% == 2 call :multiplayer_2
-if %ERRORLEVEL% == 3 call :multiplayer_3
-if %ERRORLEVEL% == 4 call :multiplayer_4
-if %ERRORLEVEL% == 5 goto home
-
-
-
-::launch zombies
-:chooseZombies
-cls
-echo ################### PLUTONIUM ZOMBIE LAUNCHER #################################
-echo.
-call :cmdMenuSel "  Launch Wordl at War (T4)" "  Launch Black Ops (T5)" "  Launch BLACK OPS 2 (T6)" "  Back"
-
-if %ERRORLEVEL% == 1 call :zombies_1
-if %ERRORLEVEL% == 2 call :zombies_2
-if %ERRORLEVEL% == 3 call :zombies_3
-if %ERRORLEVEL% == 4 goto home
 
 
 ::function to launch the game
@@ -219,28 +359,28 @@ exit
 
 :multiplayer_2 rem t4mp = world at war multiplayer
 %latest%
-start /wait /abovenormal %launching% t4mp %waw% -lan -name "%name%"
-exit /b
+:LaunchGame t4mp %waw%
+exit
 
 :multiplayer_3 rem t5mp = black ops 1 multiplayer
 ::cd /D %LOCALAPPDATA%\Plutonium
 call :LaunchGame t5mp %bo1%
-exit /b
+exit
 
 :multiplayer_4 rem t6mp = black ops 2 multiplayer
 call :LaunchGame t6mp %bo2%
-exit /b
+exit
 
 :zombies_1
 call :LaunchGame t4sp %waw%
-exit /b
+exit
 
 :zombies_2 rem t4sp = world at war singleplayer/zombies
 call :LaunchGame t5sp %bo1%
-exit /b
+exit
 
 :zombies_3 rem t5sp = black ops singleplayer/zombies
 call :LaunchGame t6zm %bo2%
-exit /b
+exit
 
 
