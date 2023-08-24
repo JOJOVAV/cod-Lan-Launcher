@@ -1,5 +1,6 @@
 @echo off
 @title PLUTONIUM LAN LAUNCHER
+setlocal
 
 
 set launching=.\bin\plutonium-bootstrapper-win32.exe
@@ -8,14 +9,14 @@ set latest=cd /D %LOCALAPPDATA%\Plutonium
 
 ::config file with username and gamepath
 set "inifile=Resources\config.ini"
-set "powershellscript=Resources\script.ps1"
-set "sectionS=settings"
+set powershellscript=Resources\script.ps1
+set sectionS=settings
 set "ininame=username"
-set "sectionF=folder"
-set "inimw3=folder_mw3"
-set "iniwaw=folder_waw"
-set "inibo1=folder_bo1"
-set "inibo2=folder_bo2"
+set sectionF=folder
+set inimw3=folder_mw3
+set iniwaw=folder_waw
+set inibo1=folder_bo1
+set inibo2=folder_bo2
 set "psCommand="(new-object -COM 'Shell.Application')^.BrowseForFolder(0,'Please choose your game folder.',0,0).self.path""
 
 
@@ -25,7 +26,6 @@ set "psCommand="(new-object -COM 'Shell.Application')^.BrowseForFolder(0,'Please
 ::set waw="D:\modded cod\plutonium\T4 aka waw\pluto_t4_full_game"
 ::set bo1="D:\modded cod\plutonium\T5 BO1\pluto_t5_full_game"
 ::set bo2="D:\modded cod\plutonium\T6 BO2\pluto_t6_full_game"
-setlocal enabledelayedexpansion
 
 call :checkResources
 call :makepowershellscript
@@ -276,35 +276,35 @@ exit /b
 
 ::edit folder
 :edit_mw3
-setlocal
-for /f "usebackq delims=" %%I in (`powershell %psCommand%`) do set "mw3=%%I"
+
+for /f "usebackq delims=" %%Z in (`powershell %psCommand%`) do set "mw3=%%Z"
 
 powershell -ExecutionPolicy Bypass -File "%powershellscript%" -iniFile "%inifile%" -section "%sectionF%" -key "%inimw3%" -newValue "%mw3%"
-endlocal
+
 goto editGamepath
 
 :edit_waw
-setlocal
-for /f "usebackq delims=" %%M in (`powershell %psCommand%`) do set "waw=%%M"
+
+for /f "usebackq delims=" %%Y in (`powershell %psCommand%`) do set "waw=%%Y"
 
 powershell -ExecutionPolicy Bypass -File "%powershellscript%" -iniFile "%inifile%" -section "%sectionF%" -key "%iniwaw%" -newValue "%waw%"
-endlocal
+
 goto editGamepath
 
 :edit_bo1
-setlocal
-for /f "usebackq delims=" %%N in (`powershell %psCommand%`) do set "bo1=%%N"
+
+for /f "usebackq delims=" %%X in (`powershell %psCommand%`) do set "bo1=%%X"
 
 powershell -ExecutionPolicy Bypass -File "%powershellscript%" -iniFile "%inifile%" -section "%sectionF%" -key "%inibo1%" -newValue "%bo1%"
-endlocal
+
 goto editGamepath
 
 :edit_bo2
-setlocal
-for /f "usebackq delims=" %%O in (`powershell %psCommand%`) do set "bo2=%%O"
+
+for /f "usebackq delims=" %%W in (`powershell %psCommand%`) do set "bo2=%%W"
 
 powershell -ExecutionPolicy Bypass -File "%powershellscript%" -iniFile "%inifile%" -section "%sectionF%" -key "%inibo2%" -newValue "%bo2%"
-endlocal
+
 goto editGamepath
 
 :cmdMenuSel
@@ -313,28 +313,28 @@ exit /b
 
 :folder_mw3
 for /f "tokens=2 delims==" %%H in ('find "%inimw3%=" %inifile%') do (
-    set "%inimw3%=%%H"
+    @REM set "%inimw3%=%%H"
     set "mw3=%%H"
 )
 exit /b
 
 :folder_waw
 for /f "tokens=2 delims==" %%I in ('find "%iniwaw%=" %inifile%') do (
-    set "iniwaw=%%I"
+    @REM set "iniwaw=%%I"
     set "waw=%%I"
    )
 exit /b
 
 :folder_bo1
 for /f "tokens=2 delims==" %%J in ('find "%inibo1%=" %inifile%') do (
-    set "inibo1=%%J"
+    @REM set "inibo1=%%J"
     set "bo1=%%J"
    )
    exit /b
 
 :folder_bo2
 for /f "tokens=2 delims==" %%L in ('find "%inibo2%=" %inifile%') do (
-    set "inibo2=%%L"
+    @REM set "inibo2=%%L"
     set "bo2=%%L"
    )
 exit /b
