@@ -10,13 +10,13 @@ set latest=cd /D %LOCALAPPDATA%\Plutonium
 ::config file with username and gamepath
 set "inifile=Resources\config.ini"
 set powershellscript=Resources\script.ps1
-set sectionS=settings
+set "sectionS=settings"
 set "ininame=username"
-set sectionF=folder
-set inimw3=folder_mw3
-set iniwaw=folder_waw
-set inibo1=folder_bo1
-set inibo2=folder_bo2
+set "sectionF=folder"
+set "inimw3=folder_mw3"
+set "iniwaw=folder_waw"
+set "inibo1=folder_bo1"
+set "inibo2=folder_bo2"
 set "psCommand="(new-object -COM 'Shell.Application')^.BrowseForFolder(0,'Please choose your game folder.',0,0).self.path""
 
 
@@ -52,11 +52,11 @@ echo ###########################################################################
 echo.
 echo   Player Name: %name%
 echo.
-call :cmdMenuSel "  Launch Online" "  Choose Multiplayer (LAN)" "  Choose Zombies LAN" "" "  Settings" "  Exit"
+call :cmdMenuSel "  Launch Online" "  Choose Multiplayer (LAN)" "  Choose Zombies (LAN)" "" "  Settings" "  Exit"
 if %ERRORLEVEL% == 1 call :pluto
 if %ERRORLEVEL% == 2 call :chooseMultiplayer
 if %ERRORLEVEL% == 3 call :chooseZombies
-if %ERRORLEVEL% == 4 call generate_config.bat
+if %ERRORLEVEL% == 4 call :home
 if %ERRORLEVEL% == 5 call :settings
 if %ERRORLEVEL% == 6 exit
 
@@ -129,7 +129,7 @@ set /p name="Enter Player name: "
 
 powershell -ExecutionPolicy Bypass -File "%powershellscript%" -iniFile "%inifile%" -section "%sectionS%" -key "%ininame%" -newValue "%name%"
 
-exit /b
+goto home
 ::change gamepath
 :editGamepath
 ::call :folder_mw3
@@ -249,28 +249,34 @@ if not exist "%inifile%" (
     ) > "%inifile%" && call :editName
 ) else call :checkname
 
-exit /b
+
 
 
 :checkname
- for /f "usebackq tokens=1,2" %%A in ("%inifile%") do (
-    set "line=%%A"
+@REM echo checkname
+@REM pause
+@REM  for /f "usebackq tokens=1,*" %%A in ("%inifile%") do (
+@REM     set "line=%%A"
     
-    if "!line:[%sectionS%]!" neq "!line!" (
-        for /f "tokens=1,2 delims==" %%B in ("!line!") do (
-            if "%%B"=="%ininame%" (
-                if "%%C"=="" (
+@REM     if "!line:[%sectionS%]!" neq "!line!" (
+@REM         for /f "tokens=1,2 delims==" %%B in ("!line!") do (
+@REM             if "%%B"=="%ininame%" (
+@REM                 if "%%C"=="" (
                                         
-                    goto editname
-                ) else (
-                    set "name=%%C"
+@REM                     goto editname
+@REM                 ) else (
+@REM                     set "name=%%C"
                     
-                    exit /b
+@REM                     exit /b
 
-                )
-            )
-        )
-    )
+@REM                 )
+@REM             )
+@REM         )
+@REM     )
+@REM )
+
+for /f "tokens=2 delims==" %%A in ('find "%ininame%=" %inifile%') do (
+    set "name=%%A"
 )
 exit /b
 
@@ -353,34 +359,39 @@ exit /b
 start /wait /abovenormal %launching% %1 %2 -lan -name "%name%"
 exit /b
 
-:multiplayer_1 rem iw5mp = modernwarfare 3 multiplayer
+::rem iw5mp = modernwarfare 3 multiplayer
+:multiplayer_1 
 call :LaunchGame iw5mp %mw3%
 exit
 
-:multiplayer_2 rem t4mp = world at war multiplayer
-%latest%
-:LaunchGame t4mp %waw%
+::rem t4mp = world at war multiplayer
+:multiplayer_2 
+call :LaunchGame t4mp %waw%
 exit
 
-:multiplayer_3 rem t5mp = black ops 1 multiplayer
-::cd /D %LOCALAPPDATA%\Plutonium
+::rem t5mp = black ops 1 multiplayer
+:multiplayer_3 
 call :LaunchGame t5mp %bo1%
 exit
 
-:multiplayer_4 rem t6mp = black ops 2 multiplayer
+::rem t6mp = black ops 2 multiplayer
+:multiplayer_4 
 call :LaunchGame t6mp %bo2%
 exit
 
-:zombies_1
+::rem t4sp = world at war singleplayer/zombies
+:zombies_1 
 call :LaunchGame t4sp %waw%
 exit
 
-:zombies_2 rem t4sp = world at war singleplayer/zombies
+::rem t5sp = black ops singleplayer/zombies
+:zombies_2 
 call :LaunchGame t5sp %bo1%
 exit
 
-:zombies_3 rem t5sp = black ops singleplayer/zombies
+::rem t6zm = black ops singleplayer/zombies 
+:zombies_3 
 call :LaunchGame t6zm %bo2%
 exit
 
-
+endlocal
